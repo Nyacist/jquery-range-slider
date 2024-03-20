@@ -296,9 +296,3 @@ export class Slider {
     $(this._root).append(slider)
   }
 }
-
-// if (this.settings.orientation === ORIENTATION.horizontal) {
-//
-// } else if (this.settings.orientation === ORIENTATION.vertical) {
-//
-// }
