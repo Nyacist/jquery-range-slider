@@ -99,33 +99,8 @@ class Thumb {
 
   setPosition(value: number) {
     //проценты отступов со всех сторон, НЕ общий прогресс шкалы
-    if (this.orientation === ORIENTATION.horizontal) {
-      if (this.location === LOCATION.begin) {
-        this._positionInPercentage = value
-        $(this.thumb).parent().css(this.side, this._positionInPercentage + '%')
-        console.log('left ' + value)
-      }
-      if (this.location === LOCATION.end) {
-        this._positionInPercentage = value
-        $(this.thumb).parent().css(this.side, this._positionInPercentage + '%')
-        console.log('right ' + value)
-      }
-    }
-
-    if (this.orientation === ORIENTATION.vertical) {
-      if (this.location === LOCATION.begin) {
-        this._positionInPercentage = value
-        $(this.thumb).parent().css(this.side, this._positionInPercentage + '%')
-        console.log('b v ' + value)
-        console.log('bottom ' + this._positionInPercentage)
-      }
-      if (this.location === LOCATION.end) {
-        this._positionInPercentage = value
-        $(this.thumb).parent().css(this.side, this._positionInPercentage + '%')
-        console.log('top ' + value)
-      }
-    }
-
+    this._positionInPercentage = value
+    $(this.thumb).parent().css(this.side, this._positionInPercentage + '%')
   }
 
   getPosition() {
@@ -137,9 +112,6 @@ export class Slider {
   _root: JQuery<HTMLElement>;
   _thumbs: [Thumb] | [Thumb, Thumb];
   settings: ISliderSettings;
-  HOR: boolean;
-  VER: boolean;
-  DOUBLE: boolean;
 
   constructor(root: JQuery<HTMLElement>, options?: ISliderOptions) {
     this._root = root
@@ -174,14 +146,9 @@ export class Slider {
     }
 
     this._root.on('mousedown', this.onClickProgressBar)
-
-    this.HOR = (this.settings.orientation === ORIENTATION.horizontal)
-    this.VER = (this.settings.orientation === ORIENTATION.vertical)
-    this.DOUBLE = (this.settings.qtThumbs === QT_THUMBS.double)
   }
 
   checkLimit = (thumb: Thumb, thumbPercentageValue: number) => {
-    //console.log(thumbPercentageValue)
     // курсор вышел из слайдера => оставить бегунок в его границах.
     if (thumbPercentageValue < 0 || thumbPercentageValue > 100) {
       return
@@ -191,7 +158,7 @@ export class Slider {
       thumb.setPosition(thumbPercentageValue)
       return;
     }
-    if (this.DOUBLE) {
+    if (this.settings.qtThumbs === QT_THUMBS.double) {
       let limit = 100 - this.settings.gap   //минимальное ограничение на отступ
       //проверка на ограничение по второму ползунку
       if (thumb == this._thumbs[0] && this._thumbs[1]) {
@@ -224,10 +191,11 @@ export class Slider {
       }
 
       let thumbPercentageValue = pixelsToPercentInSlider(root, this.settings.orientation, thumbPosition)
-      if (thumb.location === LOCATION.end && this.HOR) {
-        thumbPercentageValue = 100 - thumbPercentageValue
-      }
-      if (thumb.location === LOCATION.begin && this.VER) {
+
+      const HORIZONTAL_END = (this.settings.orientation === ORIENTATION.horizontal) && (thumb.location === LOCATION.end)
+      const VERTICAL_BEGIN = (this.settings.orientation === ORIENTATION.vertical) && (thumb.location === LOCATION.begin)
+
+      if (HORIZONTAL_END || VERTICAL_BEGIN) {
         thumbPercentageValue = 100 - thumbPercentageValue
       }
 
@@ -261,8 +229,8 @@ export class Slider {
     let dBegin = 0
     let dEnd = 0
     let reverseClickPercentValue = 100 - clickPercentValue
-    if (this.DOUBLE && this._thumbs[1]) {
-      if (this.HOR) {
+    if ((this.settings.qtThumbs === QT_THUMBS.double) && this._thumbs[1]) {
+      if (this.settings.orientation === ORIENTATION.horizontal) {
         dBegin = Math.abs(thumbsPosition[0] - clickPercentValue)
         dEnd = Math.abs(reverseClickPercentValue - thumbsPosition[1])
 
@@ -271,7 +239,7 @@ export class Slider {
           :
           this.checkLimit(this._thumbs[1], reverseClickPercentValue)
       }
-      if (this.VER) {
+      if (this.settings.orientation === ORIENTATION.vertical) {
         dBegin = Math.abs(reverseClickPercentValue - thumbsPosition[0])
         dEnd = Math.abs(thumbsPosition[1] - clickPercentValue)
 
