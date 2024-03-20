@@ -23,4 +23,14 @@ $('#root2').mySlider({
     gap: 5
 })
 
+$('#root3').mySlider({
+    orientation: "vertical",
+    qtThumbs: "single",
+    gap: 5
+})
 
+$('#root4').mySlider({
+    orientation: "vertical",
+    qtThumbs: "double",
+    gap: 5
+})

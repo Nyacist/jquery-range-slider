@@ -17,19 +17,83 @@ body {
 }
 
 .wrapper {
-  width: 400px;
   background: #fff;
   border-radius: 10px;
-  padding: 20px 25px;
+  padding: 20px;
+
+  &_horizontal {
+    width: 400px;
+  }
+
+  &_vertical {
+    height: 400px;
+  }
+}
+
+.slider_horizontal {
+  height: 10px;
+  margin: 0 10px;
+
+  .progress {
+    height: 100%;
+    left: 0%;
+    right: 0%;
+  }
+
+  .thumb {
+    top: -20px;
+
+    &_begin {
+      left: -10px;
+    }
+
+    &_end {
+      right: -10px;
+    }
+  }
+}
+//#root {
+//  height: 100%;
+//}
+//
+//#root2 {
+//  height: 100%;
+//}
+
+#root3, #root4 {
+  height: 100%;
+  padding: 10px 0;
+  //border: 1px solid black;
+}
+
+.slider_vertical {
+  width: 10px;
+  height: 100%;
+
+  .progress {
+    width: 100%;
+    top: 0%;
+    bottom: 0%;
+  }
+
+  .thumb {
+    left: -20px;
+
+    &_begin {
+      bottom: -10px;
+    }
+
+    &_end {
+      top: -10px;
+    }
+  }
 }
 
 .slider {
   border-radius: 5px;
   background: #E0E0E0;
   background: linear-gradient(left top, #E0E0E0, #EEEEEE);
-  //width: 310px;
-  height: 10px;
-  margin: 10px;
+
   position: relative;
 
   &:hover {
@@ -37,11 +101,7 @@ body {
   }
 
   .progress {
-    height: 100%;
     position: absolute;
-    //min-width: 100px;
-    left: 0%;
-    right: 0%;
     border-radius: 5px;
     background: gray;
   }
@@ -51,25 +111,8 @@ body {
     height: 20px;
     border-radius: 10px;
     position: absolute;
-    top: -20px;
     background: blue;
     cursor: pointer;
-
-    &_left {
-      left: -10px;
-    }
-
-    &_right {
-      right: -10px;
-    }
-
-    &_begin {
-      left: -10px;
-    }
-
-    &_end {
-      right: -10px;
-    }
   }
 }
 
