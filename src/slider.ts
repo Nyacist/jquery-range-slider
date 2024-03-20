@@ -2,12 +2,18 @@ import $ from 'jquery';
 import MouseMoveEvent = JQuery.MouseMoveEvent;
 import MouseDownEvent = JQuery.MouseDownEvent;
 
-function pixelsToPercentInSlider(root: JQuery<HTMLElement>, elementPixels: string | number): number {
-  const sliderWidth = $('.slider', root).width() || 1
+function pixelsToPercentInSlider(root: JQuery<HTMLElement>, orient: ORIENTATION, elementPixels: string | number): number {
+  let sliderParams = 1
+  if (orient === ORIENTATION.horizontal) {
+    sliderParams = $('.slider', root).width() || 1
+  } else if (orient === ORIENTATION.vertical) {
+    sliderParams = $('.slider', root).height() || 1
+  }
+
   //позиция нажатия в пикселях или в строке(из строки обрежутся только цифры и преобразуются в число)
   const countPixels = (typeof elementPixels === 'number') ? elementPixels : +elementPixels.replace(/[^0-9,.]/g, '')
 
-  return Math.round(countPixels / sliderWidth * 100)  //целочисленые проценты
+  return Math.round(countPixels / sliderParams * 100)  //целочисленые проценты
 }
 
 const LOCATION = {
@@ -81,30 +87,45 @@ class Thumb {
       if (this.location === LOCATION.end) {
         this.side = SIDE.right
       }
-    } /*else if (this.orientation === ORIENTATION.vertical) {
+    } else if (this.orientation === ORIENTATION.vertical) {
       if (this.location === LOCATION.begin) {
         this.side = SIDE.bottom
       }
       if (this.location === LOCATION.end) {
         this.side = SIDE.top
       }
-    }*/
+    }
   }
 
   setPosition(value: number) {
+    //проценты отступов со всех сторон, НЕ общий прогресс шкалы
     if (this.orientation === ORIENTATION.horizontal) {
       if (this.location === LOCATION.begin) {
         this._positionInPercentage = value
-        $(this.thumb).parent().css('left', this._positionInPercentage + '%')
-        //console.log('left ' + value)
+        $(this.thumb).parent().css(this.side, this._positionInPercentage + '%')
+        console.log('left ' + value)
       }
       if (this.location === LOCATION.end) {
-        this._positionInPercentage = 100 - value
-        $(this.thumb).parent().css('right', this._positionInPercentage + '%')
-        //console.log('right ' + value)
+        this._positionInPercentage = value
+        $(this.thumb).parent().css(this.side, this._positionInPercentage + '%')
+        console.log('right ' + value)
       }
     }
-    //дописать на вертикалность
+
+    if (this.orientation === ORIENTATION.vertical) {
+      if (this.location === LOCATION.begin) {
+        this._positionInPercentage = value
+        $(this.thumb).parent().css(this.side, this._positionInPercentage + '%')
+        console.log('b v ' + value)
+        console.log('bottom ' + this._positionInPercentage)
+      }
+      if (this.location === LOCATION.end) {
+        this._positionInPercentage = value
+        $(this.thumb).parent().css(this.side, this._positionInPercentage + '%')
+        console.log('top ' + value)
+      }
+    }
+
   }
 
   getPosition() {
@@ -116,6 +137,9 @@ export class Slider {
   _root: JQuery<HTMLElement>;
   _thumbs: [Thumb] | [Thumb, Thumb];
   settings: ISliderSettings;
+  HOR: boolean;
+  VER: boolean;
+  DOUBLE: boolean;
 
   constructor(root: JQuery<HTMLElement>, options?: ISliderOptions) {
     this._root = root
@@ -149,7 +173,11 @@ export class Slider {
         })]
     }
 
-    this._root.on('mousedown', this.onClickProgressBar)
+    //this._root.on('mousedown', this.onClickProgressBar)
+
+    this.HOR = (this.settings.orientation === ORIENTATION.horizontal)
+    this.VER = (this.settings.orientation === ORIENTATION.vertical)
+    this.DOUBLE = (this.settings.qtThumbs === QT_THUMBS.double)
   }
 
   checkLimit = (thumb: Thumb, thumbPercentageValue: number) => {
@@ -159,25 +187,24 @@ export class Slider {
       return
     }
     //бегунки ограничивают друг друга
-    if (this.settings.qtThumbs === QT_THUMBS.double && this._thumbs[1]) {
-      if (thumb == this._thumbs[0]) {
-        const limit = 100 - this._thumbs[1].getPosition() - this.settings.gap
-        if (thumbPercentageValue > limit) {
-          thumb.setPosition(limit)
-        } else {
-          thumb.setPosition(thumbPercentageValue)
-        }
-      }
-      if (thumb == this._thumbs[1]) {
-        const limit = this._thumbs[0].getPosition() + this.settings.gap
-        if (thumbPercentageValue < limit) {
-          thumb.setPosition(limit)
-        } else {
-          thumb.setPosition(thumbPercentageValue)
-        }
-      }
-    } else {
+    if (this.settings.qtThumbs === QT_THUMBS.single) {
       thumb.setPosition(thumbPercentageValue)
+      return;
+    }
+    if (this.DOUBLE) {
+      let limit = 100 - this.settings.gap   //минимальное ограничение на отступ
+      //проверка на ограничение по второму ползунку
+      if (thumb == this._thumbs[0] && this._thumbs[1]) {
+        limit = limit - this._thumbs[1].getPosition()
+      } else if (thumb == this._thumbs[1]) {
+        limit = limit - this._thumbs[0].getPosition()
+      }
+      //применить ограничения
+      if (thumbPercentageValue > limit) {
+        thumb.setPosition(limit)
+      } else {
+        thumb.setPosition(thumbPercentageValue)
+      }
     }
   }
 
@@ -188,10 +215,23 @@ export class Slider {
     const thumb = e.data.thumb
 
     const onMouseMove = (e: MouseMoveEvent) => {
-      this._root.off('mousedown', this.onClickProgressBar)
+      root.off('mousedown', this.onClickProgressBar)
+      let thumbPosition = 0
+      if (this.settings.orientation === ORIENTATION.horizontal) {
+        thumbPosition = e.clientX - ($('.slider', root).offset()?.left || 0)
+      } else if (this.settings.orientation === ORIENTATION.vertical) {
+        thumbPosition = e.clientY - ($('.slider', root).offset()?.top || 0)
+      }
 
-      let thumbPosition = e.clientX - ($('.slider', root).offset()?.left || 0)
-      const thumbPercentageValue = pixelsToPercentInSlider(root, thumbPosition)
+      //console.log('position = ' + thumbPosition)
+      let thumbPercentageValue = pixelsToPercentInSlider(root, this.settings.orientation, thumbPosition)
+      if (thumb.location === LOCATION.end && this.HOR) {
+        thumbPercentageValue = 100 - thumbPercentageValue
+      }
+      if (thumb.location === LOCATION.begin && this.VER) {
+        thumbPercentageValue = 100 - thumbPercentageValue
+      }
+      //console.log('% = ' + thumbPercentageValue)
 
       this.checkLimit(thumb, thumbPercentageValue)
     }
@@ -210,7 +250,7 @@ export class Slider {
     const thumbsPosition = this._thumbs.map(thumb => thumb.getPosition())
 
     const clickPosition = e.clientX - ($('.slider', this._root).offset()?.left || 0)
-    const clickValue = pixelsToPercentInSlider(this._root, clickPosition)
+    const clickValue = pixelsToPercentInSlider(this._root, this.settings.orientation, clickPosition)
 
     //если два бегунка, проверяем к какому клик был ближе, его и двигаем
     if (this._thumbs[1]) {
@@ -233,7 +273,13 @@ export class Slider {
     this._thumbs.forEach((element) => {
       progress.append(element.thumb)
     })
-    const slider = $('<div class="slider"></div>').append(progress)
+    const slider = $(`<div class='slider slider_${this.settings.orientation}'></div>`).append(progress)
     $(this._root).append(slider)
   }
 }
+
+// if (this.settings.orientation === ORIENTATION.horizontal) {
+//
+// } else if (this.settings.orientation === ORIENTATION.vertical) {
+//
+// }
