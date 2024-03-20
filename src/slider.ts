@@ -173,7 +173,7 @@ export class Slider {
         })]
     }
 
-    //this._root.on('mousedown', this.onClickProgressBar)
+    this._root.on('mousedown', this.onClickProgressBar)
 
     this.HOR = (this.settings.orientation === ORIENTATION.horizontal)
     this.VER = (this.settings.orientation === ORIENTATION.vertical)
@@ -223,7 +223,6 @@ export class Slider {
         thumbPosition = e.clientY - ($('.slider', root).offset()?.top || 0)
       }
 
-      //console.log('position = ' + thumbPosition)
       let thumbPercentageValue = pixelsToPercentInSlider(root, this.settings.orientation, thumbPosition)
       if (thumb.location === LOCATION.end && this.HOR) {
         thumbPercentageValue = 100 - thumbPercentageValue
@@ -231,7 +230,6 @@ export class Slider {
       if (thumb.location === LOCATION.begin && this.VER) {
         thumbPercentageValue = 100 - thumbPercentageValue
       }
-      //console.log('% = ' + thumbPercentageValue)
 
       this.checkLimit(thumb, thumbPercentageValue)
     }
@@ -249,23 +247,44 @@ export class Slider {
   onClickProgressBar = (e: MouseDownEvent) => {
     const thumbsPosition = this._thumbs.map(thumb => thumb.getPosition())
 
-    const clickPosition = e.clientX - ($('.slider', this._root).offset()?.left || 0)
-    const clickValue = pixelsToPercentInSlider(this._root, this.settings.orientation, clickPosition)
+    let clickPosition = 0
+    if (this.settings.orientation === ORIENTATION.horizontal) {
+      clickPosition = e.clientX - ($('.slider', this._root).offset()?.left || 0)
+    } else if (this.settings.orientation === ORIENTATION.vertical) {
+      clickPosition = e.clientY - ($('.slider', this._root).offset()?.top || 0)
+    }
+
+    const clickPercentValue = pixelsToPercentInSlider(this._root, this.settings.orientation, clickPosition)
+    console.log(clickPercentValue)
 
     //если два бегунка, проверяем к какому клик был ближе, его и двигаем
-    if (this._thumbs[1]) {
-      const distanceLeft = Math.abs(thumbsPosition[0] - clickValue)
-      const distanceRight = Math.abs(100 - thumbsPosition[1] - clickValue)
+    let dBegin = 0
+    let dEnd = 0
+    let reverseClickPercentValue = 100 - clickPercentValue
+    if (this.DOUBLE && this._thumbs[1]) {
+      if (this.HOR) {
+        dBegin = Math.abs(thumbsPosition[0] - clickPercentValue)
+        dEnd = Math.abs(reverseClickPercentValue - thumbsPosition[1])
 
-      if (distanceLeft < distanceRight) {
-        this.checkLimit(this._thumbs[0], clickValue)
-      } else {
-        this.checkLimit(this._thumbs[1], clickValue)
+        dBegin < dEnd ?
+          this.checkLimit(this._thumbs[0], clickPercentValue)
+          :
+          this.checkLimit(this._thumbs[1], reverseClickPercentValue)
+      }
+      if (this.VER) {
+        dBegin = Math.abs(reverseClickPercentValue - thumbsPosition[0])
+        dEnd = Math.abs(thumbsPosition[1] - clickPercentValue)
+
+        dBegin < dEnd ?
+          this.checkLimit(this._thumbs[0], reverseClickPercentValue)
+          :
+          this.checkLimit(this._thumbs[1], clickPercentValue)
       }
       return
     }
+
     //если один бегунок
-    this._thumbs[0].setPosition(clickValue)
+    this._thumbs[0].setPosition(clickPercentValue)
   }
 
   mount() {
