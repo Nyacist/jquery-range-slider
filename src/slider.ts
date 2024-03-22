@@ -223,13 +223,13 @@ export class Slider {
     }
 
     const clickPercentValue = pixelsToPercentInSlider(this._root, this.settings.orientation, clickPosition)
-    console.log(clickPercentValue)
 
     //если два бегунка, проверяем к какому клик был ближе, его и двигаем
     let dBegin = 0
     let dEnd = 0
     let reverseClickPercentValue = 100 - clickPercentValue
     if ((this.settings.qtThumbs === QT_THUMBS.double) && this._thumbs[1]) {
+      //для горизонтальных
       if (this.settings.orientation === ORIENTATION.horizontal) {
         dBegin = Math.abs(thumbsPosition[0] - clickPercentValue)
         dEnd = Math.abs(reverseClickPercentValue - thumbsPosition[1])
@@ -238,7 +238,9 @@ export class Slider {
           this.checkLimit(this._thumbs[0], clickPercentValue)
           :
           this.checkLimit(this._thumbs[1], reverseClickPercentValue)
+        return;
       }
+      //для вертикальных
       if (this.settings.orientation === ORIENTATION.vertical) {
         dBegin = Math.abs(reverseClickPercentValue - thumbsPosition[0])
         dEnd = Math.abs(thumbsPosition[1] - clickPercentValue)
@@ -247,12 +249,19 @@ export class Slider {
           this.checkLimit(this._thumbs[0], reverseClickPercentValue)
           :
           this.checkLimit(this._thumbs[1], clickPercentValue)
+        return;
       }
-      return
     }
 
     //если один бегунок
-    this._thumbs[0].setPosition(clickPercentValue)
+    if (this.settings.orientation === ORIENTATION.horizontal) {
+      this._thumbs[0].setPosition(reverseClickPercentValue)
+      return;
+    }
+    if (this.settings.orientation === ORIENTATION.vertical) {
+      this._thumbs[0].setPosition(clickPercentValue)
+      return;
+    }
   }
 
   mount() {
@@ -261,6 +270,7 @@ export class Slider {
       progress.append(element.thumb)
     })
     const slider = $(`<div class='slider slider_${this.settings.orientation}'></div>`).append(progress)
-    $(this._root).append(slider)
+    const wrapper = $(`<div class='wrapper wrapper_${this.settings.orientation}'></div>`).append(slider)
+    $(this._root).append(wrapper)
   }
 }
