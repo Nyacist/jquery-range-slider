@@ -1,18 +1,19 @@
 import $ from 'jquery';
 import MouseMoveEvent = JQuery.MouseMoveEvent;
 import MouseDownEvent = JQuery.MouseDownEvent;
+import styles from './style.module.scss'
 
-function pixelsToPercentInSlider(root: JQuery<HTMLElement>, orient: ORIENTATION, elementPixels: string | number): number {
+function pixelsToPercentInSlider(root: JQuery<HTMLElement>, direction: DIRECTION, elementPixels: string | number): number {
+  //debugger
   let sliderParams = 1
-  if (orient === ORIENTATION.horizontal) {
-    sliderParams = $('.slider', root).width() || 1
-  } else if (orient === ORIENTATION.vertical) {
-    sliderParams = $('.slider', root).height() || 1
+  if (direction === DIRECTION.horizontal) {
+    sliderParams = $('.' + styles.slider, root).width() || 1
+  } else if (direction === DIRECTION.vertical) {
+    sliderParams = $('.' + styles.slider, root).height() || 1
   }
 
   //позиция нажатия в пикселях или в строке(из строки обрежутся только цифры и преобразуются в число)
   const countPixels = (typeof elementPixels === 'number') ? elementPixels : +elementPixels.replace(/[^0-9,.]/g, '')
-
   return Math.round(countPixels / sliderParams * 100)  //целочисленые проценты
 }
 
@@ -30,11 +31,11 @@ const SIDE = {
 } as const
 type SIDE = keyof typeof SIDE
 
-const ORIENTATION = {
+const DIRECTION = {
   vertical: 'vertical',
   horizontal: 'horizontal',
 } as const
-type ORIENTATION = keyof typeof ORIENTATION
+type DIRECTION = keyof typeof DIRECTION
 
 const QT_THUMBS = {
   single: 'single',
@@ -43,34 +44,38 @@ const QT_THUMBS = {
 type QT_THUMBS = keyof typeof QT_THUMBS
 
 export interface ISliderOptions {
-  orientation?: ORIENTATION,
+  direction?: DIRECTION,
   qtThumbs?: QT_THUMBS,
   gap?: number,
 }
 
 interface ISliderSettings {
-  orientation: ORIENTATION,
+  direction: DIRECTION,
   qtThumbs: QT_THUMBS,
   gap: number,          // 0 < gap < 100, иначе 10
 }
 
 interface IThumbOptions {
   location: LOCATION,
-  orientation: ORIENTATION,
+  direction: DIRECTION,
   onMouseDown: (e: MouseDownEvent) => void
 }
 
 class Thumb {
   thumb: JQuery<HTMLElement>
-  orientation: ORIENTATION
+  direction: DIRECTION
   location: LOCATION
   side: SIDE
   _positionInPercentage: number
 
   constructor(options: IThumbOptions) {
-    this.thumb = $(`<div class='thumb thumb_${options.location}'></div>`)
+    let location
+    options.location === LOCATION.end
+      ? location = styles.thumb_end
+      : location = styles.thumb_begin
+    this.thumb = $(`<div class='${styles.thumb} ${location}'></div>`)
     this.location = options.location || LOCATION.end
-    this.orientation = options.orientation || ORIENTATION.horizontal
+    this.direction = options.direction || DIRECTION.horizontal
 
     this._positionInPercentage = 0
     this.side = SIDE.right
@@ -80,14 +85,14 @@ class Thumb {
   }
 
   _setSide() {
-    if (this.orientation === ORIENTATION.horizontal) {
+    if (this.direction === DIRECTION.horizontal) {
       if (this.location === LOCATION.begin) {
         this.side = SIDE.left
       }
       if (this.location === LOCATION.end) {
         this.side = SIDE.right
       }
-    } else if (this.orientation === ORIENTATION.vertical) {
+    } else if (this.direction === DIRECTION.vertical) {
       if (this.location === LOCATION.begin) {
         this.side = SIDE.bottom
       }
@@ -116,7 +121,7 @@ export class Slider {
   constructor(root: JQuery<HTMLElement>, options?: ISliderOptions) {
     this._root = root
     this.settings = {
-      orientation: ORIENTATION.horizontal,
+      direction: DIRECTION.horizontal,
       qtThumbs: QT_THUMBS.single,
       gap: 10,
     }
@@ -128,19 +133,19 @@ export class Slider {
 
     this._thumbs = [new Thumb({
       location: LOCATION.end,
-      orientation: this.settings.orientation,
+      direction: this.settings.direction,
       onMouseDown: this.onMouseDown,
     })]
 
     if (this.settings.qtThumbs === QT_THUMBS.double) {
       this._thumbs = [new Thumb({
         location: LOCATION.begin,
-        orientation: this.settings.orientation,
+        direction: this.settings.direction,
         onMouseDown: this.onMouseDown,
       }),
         new Thumb({
           location: LOCATION.end,
-          orientation: this.settings.orientation,
+          direction: this.settings.direction,
           onMouseDown: this.onMouseDown,
         })]
     }
@@ -184,16 +189,16 @@ export class Slider {
     const onMouseMove = (e: MouseMoveEvent) => {
       root.off('mousedown', this.onClickProgressBar)
       let thumbPosition = 0
-      if (this.settings.orientation === ORIENTATION.horizontal) {
-        thumbPosition = e.clientX - ($('.slider', root).offset()?.left || 0)
-      } else if (this.settings.orientation === ORIENTATION.vertical) {
-        thumbPosition = e.clientY - ($('.slider', root).offset()?.top || 0)
+      if (this.settings.direction === DIRECTION.horizontal) {
+        thumbPosition = e.clientX - ($('.' + styles.slider, root).offset()?.left || 0)
+      } else if (this.settings.direction === DIRECTION.vertical) {
+        thumbPosition = e.clientY - ($('.' + styles.slider, root).offset()?.top || 0)
       }
 
-      let thumbPercentageValue = pixelsToPercentInSlider(root, this.settings.orientation, thumbPosition)
+      let thumbPercentageValue = pixelsToPercentInSlider(root, this.settings.direction, thumbPosition)
 
-      const HORIZONTAL_END = (this.settings.orientation === ORIENTATION.horizontal) && (thumb.location === LOCATION.end)
-      const VERTICAL_BEGIN = (this.settings.orientation === ORIENTATION.vertical) && (thumb.location === LOCATION.begin)
+      const HORIZONTAL_END = (this.settings.direction === DIRECTION.horizontal) && (thumb.location === LOCATION.end)
+      const VERTICAL_BEGIN = (this.settings.direction === DIRECTION.vertical) && (thumb.location === LOCATION.begin)
 
       if (HORIZONTAL_END || VERTICAL_BEGIN) {
         thumbPercentageValue = 100 - thumbPercentageValue
@@ -216,13 +221,13 @@ export class Slider {
     const thumbsPosition = this._thumbs.map(thumb => thumb.getPosition())
 
     let clickPosition = 0
-    if (this.settings.orientation === ORIENTATION.horizontal) {
-      clickPosition = e.clientX - ($('.slider', this._root).offset()?.left || 0)
-    } else if (this.settings.orientation === ORIENTATION.vertical) {
-      clickPosition = e.clientY - ($('.slider', this._root).offset()?.top || 0)
+    if (this.settings.direction === DIRECTION.horizontal) {
+      clickPosition = e.clientX - ($('.' + styles.slider, this._root).offset()?.left || 0)
+    } else if (this.settings.direction === DIRECTION.vertical) {
+      clickPosition = e.clientY - ($('.' + styles.slider, this._root).offset()?.top || 0)
     }
 
-    const clickPercentValue = pixelsToPercentInSlider(this._root, this.settings.orientation, clickPosition)
+    const clickPercentValue = pixelsToPercentInSlider(this._root, this.settings.direction, clickPosition)
 
     //если два бегунка, проверяем к какому клик был ближе, его и двигаем
     let dBegin = 0
@@ -230,7 +235,7 @@ export class Slider {
     let reverseClickPercentValue = 100 - clickPercentValue
     if ((this.settings.qtThumbs === QT_THUMBS.double) && this._thumbs[1]) {
       //для горизонтальных
-      if (this.settings.orientation === ORIENTATION.horizontal) {
+      if (this.settings.direction === DIRECTION.horizontal) {
         dBegin = Math.abs(thumbsPosition[0] - clickPercentValue)
         dEnd = Math.abs(reverseClickPercentValue - thumbsPosition[1])
 
@@ -241,7 +246,7 @@ export class Slider {
         return;
       }
       //для вертикальных
-      if (this.settings.orientation === ORIENTATION.vertical) {
+      if (this.settings.direction === DIRECTION.vertical) {
         dBegin = Math.abs(reverseClickPercentValue - thumbsPosition[0])
         dEnd = Math.abs(thumbsPosition[1] - clickPercentValue)
 
@@ -254,23 +259,28 @@ export class Slider {
     }
 
     //если один бегунок
-    if (this.settings.orientation === ORIENTATION.horizontal) {
+    if (this.settings.direction === DIRECTION.horizontal) {
       this._thumbs[0].setPosition(reverseClickPercentValue)
       return;
     }
-    if (this.settings.orientation === ORIENTATION.vertical) {
+    if (this.settings.direction === DIRECTION.vertical) {
       this._thumbs[0].setPosition(clickPercentValue)
       return;
     }
   }
 
   mount() {
-    let progress = $('<div class="progress"></div>')
+    let progress = $(`<div class='${styles.progress}'></div>`)
     this._thumbs.forEach((element) => {
       progress.append(element.thumb)
     })
-    const slider = $(`<div class='slider slider_${this.settings.orientation}'></div>`).append(progress)
-    const wrapper = $(`<div class='wrapper wrapper_${this.settings.orientation}'></div>`).append(slider)
+    const slider = $(`<div class='${styles.slider}'></div>`).append(progress)
+    let direction
+    this.settings.direction === DIRECTION.horizontal
+      ? direction = styles.wrapper_horizontal
+      : direction = styles.wrapper_vertical
+
+    const wrapper = $(`<div class='${styles.wrapper} ${direction}'></div>`).append(slider)
     $(this._root).append(wrapper)
   }
 }

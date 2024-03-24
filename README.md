@@ -10,17 +10,17 @@ $('#root').mySlider({
 })
 ```
 
-### orientation
+### direction
 
 Ориентация слайдера. По умолчанию горизонтальная.
 
 Для горизонтального (default):
 ``` JS 
-orientation: 'horizontal'
+direction: 'horizontal'
 ```
 Для вертикального:
 ``` JS 
-orientation: 'vertical'
+direction: 'vertical'
 ```
 
 ### qtThumbs
