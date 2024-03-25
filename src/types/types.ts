@@ -1,3 +1,5 @@
+import {IThumb} from "./interfaces";
+
 
 export const DIRECTION = {
   vertical: 'vertical',
@@ -24,3 +26,6 @@ export const SIDE = {
   bottom: 'bottom',
 } as const
 export type SIDE = keyof typeof SIDE
+
+export type Thumbs = [IThumb] | [IThumb, IThumb]
+export type ViewThumbs = [JQuery<HTMLElement>] | [JQuery<HTMLElement>, JQuery<HTMLElement>]
