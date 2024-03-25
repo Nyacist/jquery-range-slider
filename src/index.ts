@@ -1,13 +1,8 @@
 import $ from 'jquery';
 import jQuery from 'jquery';
-//import './style.scss';
+import './style.css';
 import {Slider, ISliderOptions} from "./slider";
 
-declare global {
-  interface JQuery {
-    mySlider(options?: ISliderOptions): void
-  }
-}
 
 (function ($) {
   $.fn.mySlider = function (options?: ISliderOptions) {
@@ -32,5 +27,4 @@ $('#root3').mySlider({
 $('#root4').mySlider({
   direction: "vertical",
   qtThumbs: "double",
-  gap: 5
 })
