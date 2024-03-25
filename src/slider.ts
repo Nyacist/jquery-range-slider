@@ -5,7 +5,6 @@ import styles from './style.module.scss'
 import {DIRECTION, QT_THUMBS, LOCATION, SIDE} from "./types/types";
 
 function pixelsToPercentInSlider(root: JQuery<HTMLElement>, direction: DIRECTION, elementPixels: string | number): number {
-  //debugger
   let sliderParams = 1
   if (direction === DIRECTION.horizontal) {
     sliderParams = $('.' + styles.slider, root).width() || 1
