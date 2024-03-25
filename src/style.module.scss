@@ -1,0 +1,88 @@
+.wrapper {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+
+  &_horizontal {
+    width: 400px;
+
+    .slider {
+      height: 10px;
+      margin: 0 10px;
+
+      .progress {
+        height: 100%;
+        left: 0;
+        right: 0;
+      }
+
+      .thumb {
+        top: -20px;
+
+        &_begin {
+          left: -10px;
+        }
+
+        &_end {
+          right: -10px;
+        }
+      }
+    }
+  }
+
+  &_vertical {
+    height: 400px;
+
+    .slider {
+      width: 10px;
+      height: 100%;
+
+      .progress {
+        width: 100%;
+        top: 0;
+        bottom: 0;
+      }
+
+      .thumb {
+        left: -20px;
+
+        &_begin {
+          bottom: -10px;
+        }
+
+        &_end {
+          top: -10px;
+        }
+      }
+    }
+  }
+}
+
+
+.slider {
+  border-radius: 5px;
+  background: #E0E0E0;
+  background: linear-gradient(left top, #E0E0E0, #EEEEEE);
+
+  position: relative;
+
+  &:hover {
+    cursor: pointer;
+  }
+
+  .progress {
+    position: absolute;
+    border-radius: 5px;
+    background: gray;
+  }
+
+  .thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    position: absolute;
+    background: blue;
+    cursor: pointer;
+  }
+}
+
