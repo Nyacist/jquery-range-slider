@@ -2,6 +2,7 @@ import $ from 'jquery';
 import MouseMoveEvent = JQuery.MouseMoveEvent;
 import MouseDownEvent = JQuery.MouseDownEvent;
 import styles from './style.module.scss'
+import {DIRECTION, QT_THUMBS, LOCATION, SIDE} from "./types/types";
 
 function pixelsToPercentInSlider(root: JQuery<HTMLElement>, direction: DIRECTION, elementPixels: string | number): number {
   //debugger
@@ -16,32 +17,6 @@ function pixelsToPercentInSlider(root: JQuery<HTMLElement>, direction: DIRECTION
   const countPixels = (typeof elementPixels === 'number') ? elementPixels : +elementPixels.replace(/[^0-9,.]/g, '')
   return Math.round(countPixels / sliderParams * 100)  //целочисленые проценты
 }
-
-const LOCATION = {
-  begin: 'begin',
-  end: 'end',
-} as const
-type LOCATION = keyof typeof LOCATION
-
-const SIDE = {
-  left: 'left',
-  right: 'right',
-  top: 'top',
-  bottom: 'bottom',
-} as const
-type SIDE = keyof typeof SIDE
-
-const DIRECTION = {
-  vertical: 'vertical',
-  horizontal: 'horizontal',
-} as const
-type DIRECTION = keyof typeof DIRECTION
-
-const QT_THUMBS = {
-  single: 'single',
-  double: 'double',
-} as const
-type QT_THUMBS = keyof typeof QT_THUMBS
 
 export interface ISliderOptions {
   direction?: DIRECTION,
@@ -117,18 +92,28 @@ export class Slider {
   _root: JQuery<HTMLElement>;
   _thumbs: [Thumb] | [Thumb, Thumb];
   settings: ISliderSettings;
+  HORIZONTAL: boolean;
+  VERTICAL: boolean;
 
   constructor(root: JQuery<HTMLElement>, options?: ISliderOptions) {
     this._root = root
+    //настройки по умолчанию
+    this.HORIZONTAL = true
+    this.VERTICAL = false
     this.settings = {
       direction: DIRECTION.horizontal,
       qtThumbs: QT_THUMBS.single,
       gap: 10,
     }
+
     this.settings = {...this.settings, ...options}
     // 0 < gap < 100, иначе 10
     if (this.settings.gap < 0 || this.settings.gap > 100) {
       this.settings.gap = 10
+    }
+    if(this.settings.direction === DIRECTION.vertical) {
+      this.HORIZONTAL = false
+      this.VERTICAL = true
     }
 
     this._thumbs = [new Thumb({
@@ -189,16 +174,16 @@ export class Slider {
     const onMouseMove = (e: MouseMoveEvent) => {
       root.off('mousedown', this.onClickProgressBar)
       let thumbPosition = 0
-      if (this.settings.direction === DIRECTION.horizontal) {
+      if (this.HORIZONTAL) {
         thumbPosition = e.clientX - ($('.' + styles.slider, root).offset()?.left || 0)
-      } else if (this.settings.direction === DIRECTION.vertical) {
+      } else if (this.VERTICAL) {
         thumbPosition = e.clientY - ($('.' + styles.slider, root).offset()?.top || 0)
       }
 
       let thumbPercentageValue = pixelsToPercentInSlider(root, this.settings.direction, thumbPosition)
 
-      const HORIZONTAL_END = (this.settings.direction === DIRECTION.horizontal) && (thumb.location === LOCATION.end)
-      const VERTICAL_BEGIN = (this.settings.direction === DIRECTION.vertical) && (thumb.location === LOCATION.begin)
+      const HORIZONTAL_END = (this.HORIZONTAL) && (thumb.location === LOCATION.end)
+      const VERTICAL_BEGIN = (this.VERTICAL) && (thumb.location === LOCATION.begin)
 
       if (HORIZONTAL_END || VERTICAL_BEGIN) {
         thumbPercentageValue = 100 - thumbPercentageValue
@@ -221,9 +206,9 @@ export class Slider {
     const thumbsPosition = this._thumbs.map(thumb => thumb.getPosition())
 
     let clickPosition = 0
-    if (this.settings.direction === DIRECTION.horizontal) {
+    if (this.HORIZONTAL) {
       clickPosition = e.clientX - ($('.' + styles.slider, this._root).offset()?.left || 0)
-    } else if (this.settings.direction === DIRECTION.vertical) {
+    } else if (this.VERTICAL) {
       clickPosition = e.clientY - ($('.' + styles.slider, this._root).offset()?.top || 0)
     }
 
@@ -235,7 +220,7 @@ export class Slider {
     let reverseClickPercentValue = 100 - clickPercentValue
     if ((this.settings.qtThumbs === QT_THUMBS.double) && this._thumbs[1]) {
       //для горизонтальных
-      if (this.settings.direction === DIRECTION.horizontal) {
+      if (this.HORIZONTAL) {
         dBegin = Math.abs(thumbsPosition[0] - clickPercentValue)
         dEnd = Math.abs(reverseClickPercentValue - thumbsPosition[1])
 
@@ -246,7 +231,7 @@ export class Slider {
         return;
       }
       //для вертикальных
-      if (this.settings.direction === DIRECTION.vertical) {
+      if (this.VERTICAL) {
         dBegin = Math.abs(reverseClickPercentValue - thumbsPosition[0])
         dEnd = Math.abs(thumbsPosition[1] - clickPercentValue)
 
@@ -259,11 +244,11 @@ export class Slider {
     }
 
     //если один бегунок
-    if (this.settings.direction === DIRECTION.horizontal) {
+    if (this.HORIZONTAL) {
       this._thumbs[0].setPosition(reverseClickPercentValue)
       return;
     }
-    if (this.settings.direction === DIRECTION.vertical) {
+    if (this.VERTICAL) {
       this._thumbs[0].setPosition(clickPercentValue)
       return;
     }
@@ -276,7 +261,7 @@ export class Slider {
     })
     const slider = $(`<div class='${styles.slider}'></div>`).append(progress)
     let direction
-    this.settings.direction === DIRECTION.horizontal
+    this.HORIZONTAL
       ? direction = styles.wrapper_horizontal
       : direction = styles.wrapper_vertical
 
