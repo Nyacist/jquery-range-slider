@@ -20,11 +20,19 @@ export interface IThumbOptions {
 }
 
 export interface IThumb {
-  //thumb: JQuery<HTMLElement>;
   location: LOCATION;
   direction: DIRECTION;
   side: SIDE;
   positionInPercentage: number;
   setPosition(value: number): void;
   getPosition(): number;
+  getSide(): string;
+}
+
+export interface IThumbs {
+  [key: string]: IThumb
+}
+
+export interface IViewThumbs {
+  [key: string]: JQuery<HTMLElement>
 }

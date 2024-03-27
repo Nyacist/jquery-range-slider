@@ -1,36 +1,63 @@
-import {IModel, RangeSliderModel} from './model'
-import {IView, RangeSliderView} from "./view";
-import {Thumbs} from "./types/types";
+import {IModel, RangeSliderModel} from './model';
 import {ISliderOptions} from "./types/interfaces";
+import {LOCATION} from "./types/types";
 
 export interface IController {
   model: IModel;
-  view: IView;
-  mount(): void;
   setSettings(options?: ISliderOptions): void;
 }
 
 export class RangeSliderController implements IController {
   model: RangeSliderModel;
-  view: RangeSliderView;
 
-  constructor(root: JQuery<HTMLElement>, options?: ISliderOptions) {
+  constructor(options?: ISliderOptions) {
     this.model = new RangeSliderModel(options);
-    const thumbs: Thumbs = this.model.getThumbs()
-    this.view = new RangeSliderView(root, thumbs)
   }
 
   setSettings(options?: ISliderOptions) {
     this.model.setSettings(options)
   }
 
-  createThumbs() {
-
-    //this.view.createThumbs(thumbs)
+  getThumbs() {
+    return this.model.getThumbs()
   }
 
-  mount() {
-    this.view.mount()
-    console.log(this.model)
+  setThumbPosition(thumbsPosition: LOCATION, sliderParams: {[key: string]: number}, elementPixels: string | number) {
+    this.model.setThumbPosition(thumbsPosition, sliderParams, elementPixels)
   }
+
+  getThumbPosition(thumbsLocation: LOCATION) {
+    return this.model.getThumbPosition(thumbsLocation)
+  }
+
+  getThumbSide(thumbsLocation: LOCATION) {
+    return this.model.getThumbSide(thumbsLocation)
+  }
+  // checkLimit = (thumb: Thumb, thumbPercentageValue: number) => {
+  //   // курсор вышел из слайдера => оставить бегунок в его границах.
+  //   if (thumbPercentageValue < 0 || thumbPercentageValue > 100) {
+  //     return
+  //   }
+  //   //бегунки ограничивают друг друга
+  //   if (this.settings.qtThumbs === QT_THUMBS.single) {
+  //     thumb.setPosition(thumbPercentageValue)
+  //     return;
+  //   }
+  //   if (this.settings.qtThumbs === QT_THUMBS.double) {
+  //     let limit = 100 - this.settings.gap   //минимальное ограничение на отступ
+  //     //проверка на ограничение по второму ползунку
+  //     if (thumb == this._thumbs[0] && this._thumbs[1]) {
+  //       limit = limit - this._thumbs[1].getPosition()
+  //     } else if (thumb == this._thumbs[1]) {
+  //       limit = limit - this._thumbs[0].getPosition()
+  //     }
+  //     //применить ограничения
+  //     if (thumbPercentageValue > limit) {
+  //       thumb.setPosition(limit)
+  //     } else {
+  //       thumb.setPosition(thumbPercentageValue)
+  //     }
+  //   }
+  // }
+
 }

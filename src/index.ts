@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import './style.css';
 import {Slider, ISliderOptions} from "./slider";
-import {RangeSliderController} from "./controller";
+import {RangeSliderView} from "./view";
 
 (function ($) {
   $.fn.mySlider = function (options?: ISliderOptions) {
@@ -9,7 +9,7 @@ import {RangeSliderController} from "./controller";
     rangeSlider.mount();
   }
   $.fn.myPlugin = function (options?: ISliderOptions) {
-    const rangeSlider = new RangeSliderController(this, options);
+    const rangeSlider = new RangeSliderView(this, options);
     rangeSlider.mount();
   }
 })($);
