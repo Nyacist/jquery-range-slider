@@ -1,20 +1,19 @@
 import {IModel, RangeSliderModel} from './model';
-import {ISliderOptions} from "./types/interfaces";
-import {LOCATION} from "./types/types";
+import {SLIDER_PROPS_OPTIONS, LOCATION} from "./types/types";
 
 export interface IController {
   model: IModel;
-  setSettings(options?: ISliderOptions): void;
+  setSettings(options?: SLIDER_PROPS_OPTIONS): void;
 }
 
 export class RangeSliderController implements IController {
   model: RangeSliderModel;
 
-  constructor(options?: ISliderOptions) {
+  constructor(options?: SLIDER_PROPS_OPTIONS) {
     this.model = new RangeSliderModel(options);
   }
 
-  setSettings(options?: ISliderOptions) {
+  setSettings(options?: SLIDER_PROPS_OPTIONS) {
     this.model.setSettings(options)
   }
 
@@ -33,31 +32,9 @@ export class RangeSliderController implements IController {
   getThumbSide(thumbsLocation: LOCATION) {
     return this.model.getThumbSide(thumbsLocation)
   }
-  // checkLimit = (thumb: Thumb, thumbPercentageValue: number) => {
-  //   // курсор вышел из слайдера => оставить бегунок в его границах.
-  //   if (thumbPercentageValue < 0 || thumbPercentageValue > 100) {
-  //     return
-  //   }
-  //   //бегунки ограничивают друг друга
-  //   if (this.settings.qtThumbs === QT_THUMBS.single) {
-  //     thumb.setPosition(thumbPercentageValue)
-  //     return;
-  //   }
-  //   if (this.settings.qtThumbs === QT_THUMBS.double) {
-  //     let limit = 100 - this.settings.gap   //минимальное ограничение на отступ
-  //     //проверка на ограничение по второму ползунку
-  //     if (thumb == this._thumbs[0] && this._thumbs[1]) {
-  //       limit = limit - this._thumbs[1].getPosition()
-  //     } else if (thumb == this._thumbs[1]) {
-  //       limit = limit - this._thumbs[0].getPosition()
-  //     }
-  //     //применить ограничения
-  //     if (thumbPercentageValue > limit) {
-  //       thumb.setPosition(limit)
-  //     } else {
-  //       thumb.setPosition(thumbPercentageValue)
-  //     }
-  //   }
-  // }
+
+  getDirection() {
+    return this.model.getDirection()
+  }
 
 }
