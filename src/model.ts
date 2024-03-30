@@ -75,10 +75,6 @@ export interface IModel {
     elementPixels: string | number
   ): void;
 
-  getThumbPosition(thumbsLocation: LOCATION): number;
-
-  getThumbSide(thumbsLocation: LOCATION): SIDE;
-
   getDirection(): DIRECTION;
 }
 
@@ -127,8 +123,8 @@ export class RangeSliderModel implements IModel {
   newThumbPosition(
     thumbLocation: LOCATION,
     sliderParams: { [key: string]: number },
-    elementPixels: string | number): {side: SIDE, value: number} {
-    let thumbPercentageValue = RangeSliderModel._pixelsToPercentInSlider(this.settings.direction, sliderParams, elementPixels)
+    positionInPixels: number): { side: SIDE, value: number } {
+    let thumbPercentageValue = RangeSliderModel._pixelsToPercentInSlider(this.settings.direction, sliderParams, positionInPixels)
 
     const HORIZONTAL_END = (this.settings.direction === DIRECTION.horizontal) && (thumbLocation === LOCATION.end)
     const VERTICAL_BEGIN = (this.settings.direction === DIRECTION.vertical) && (thumbLocation === LOCATION.begin)
@@ -143,21 +139,9 @@ export class RangeSliderModel implements IModel {
     }
   }
 
-  getThumbPosition(thumbsLocation: LOCATION): number {
-    return this.thumbs[thumbsLocation]?.getPosition()
-  }
-
-  getThumbSide(thumbsLocation: LOCATION): SIDE {
-    return this.thumbs[thumbsLocation].getSide()
-  }
-
-  getDirection(): DIRECTION {
-    return this.settings.direction
-  }
-
   checkClickProgressBar(
     sliderParams: { [key: string]: number },
-    clickPosition: number): {location: LOCATION, side: SIDE, value: number}  {
+    clickPosition: number): { side: SIDE, value: number } {
     const clickPercentValue = RangeSliderModel._pixelsToPercentInSlider(this.settings.direction, sliderParams, clickPosition)
     const reverseClickPercentValue = 100 - clickPercentValue
 
@@ -178,19 +162,18 @@ export class RangeSliderModel implements IModel {
     let dEnd = 0
     let value: number
 
-    const thumbsPosition: {[key: string]: number} = {}
+    const thumbsPosition: { [key: string]: number } = {}
     for (let key in this.thumbs) {
       thumbsPosition[key] = this.thumbs[key].getPosition()
     }
 
     if (this.settings.qtThumbs === QT_THUMBS.double) {
-
       //для горизонтальных
       if (this.settings.direction === DIRECTION.horizontal) {
         dBegin = Math.abs(thumbsPosition[LOCATION.begin] - clickPercentValue)
         dEnd = Math.abs(reverseClickPercentValue - thumbsPosition[LOCATION.end])
 
-        if(dBegin < dEnd) {
+        if (dBegin < dEnd) {
           thumbLocation = LOCATION.begin
           value = clickPercentValue
         } else {
@@ -203,7 +186,7 @@ export class RangeSliderModel implements IModel {
         dBegin = Math.abs(reverseClickPercentValue - thumbsPosition[LOCATION.begin])
         dEnd = Math.abs(thumbsPosition[LOCATION.end] - clickPercentValue)
 
-        if(dBegin < dEnd) {
+        if (dBegin < dEnd) {
           thumbLocation = LOCATION.begin
           value = reverseClickPercentValue
         } else {
@@ -213,10 +196,13 @@ export class RangeSliderModel implements IModel {
       }
     }
     return {
-      location: thumbLocation,
       side: this.thumbs[thumbLocation].getSide(),
       value: this.thumbs[thumbLocation].getPosition()
     }
+  }
+
+  getDirection(): DIRECTION {
+    return this.settings.direction
   }
 
   private _checkLimit = (thumbLocation: LOCATION, thumbPercentageValue: number) => {
@@ -227,27 +213,27 @@ export class RangeSliderModel implements IModel {
     }
     //бегунки ограничивают друг друга
     if (this.settings.qtThumbs === QT_THUMBS.single) {
-      this.thumbs[thumbLocation]?.setPosition(thumbPercentageValue)
+      this.thumbs[thumbLocation].setPosition(thumbPercentageValue)
       return;
     }
     if (this.settings.qtThumbs === QT_THUMBS.double) {
       let limit = 100 - this.settings.gap   //минимальное ограничение на отступ
       //проверка на ограничение по второму ползунку
       if (thumbLocation === LOCATION.begin) {
-        limit = limit - this.thumbs[LOCATION.end]!.getPosition()
+        limit = limit - this.thumbs[LOCATION.end].getPosition()
       } else if (thumbLocation === LOCATION.end) {
-        limit = limit - this.thumbs[LOCATION.begin]!.getPosition()
+        limit = limit - this.thumbs[LOCATION.begin].getPosition()
       }
       //применить ограничения
       if (thumbPercentageValue > limit) {
-        this.thumbs[thumbLocation]?.setPosition(limit)
+        this.thumbs[thumbLocation].setPosition(limit)
       } else {
-        this.thumbs[thumbLocation]?.setPosition(thumbPercentageValue)
+        this.thumbs[thumbLocation].setPosition(thumbPercentageValue)
       }
     }
   }
 
-  private static _pixelsToPercentInSlider(direction: DIRECTION, sliderProps: { [key: string]: number }, elementPixels: string | number): number {
+  private static _pixelsToPercentInSlider(direction: DIRECTION, sliderProps: { [key: string]: number }, positionInPixels: number): number {
     let sliderParams = 1
     if (direction === DIRECTION.horizontal) {
       sliderParams = sliderProps.width
@@ -256,8 +242,8 @@ export class RangeSliderModel implements IModel {
     }
 
     //позиция нажатия в пикселях или в строке(из строки обрежутся только цифры и преобразуются в число)
-    const countPixels = (typeof elementPixels === 'number') ? elementPixels : +elementPixels.replace(/[^0-9,.]/g, '')
-    return Math.round(countPixels / sliderParams * 100)  //целочисленые проценты
+    //const countPixels = (typeof positionInPixels === 'number') ? positionInPixels : +positionInPixels.replace(/[^0-9,.]/g, '')
+    return Math.round(positionInPixels / sliderParams * 100)  //целочисленые проценты
   }
 }
 

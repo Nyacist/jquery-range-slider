@@ -27,26 +27,29 @@ export const SIDE = {
 } as const
 export type SIDE = keyof typeof SIDE
 
-
-export type THUMBS_ARRAY = {
-  [key: string]: IThumb
+export type SLIDER_PARAMS = {
+  width: number;
+  height: number;
 }
-//   {
-//   [key in LOCATION]?: IThumb
-// }
 
-export type THUMBS_VIEW = {
-  [key: string]: JQuery<HTMLElement>
+export type UPDATE_DATA = {
+  side: SIDE,
+  value: number,
 }
-//   {
-//   [key in LOCATION]?: JQuery<HTMLElement>
-// }
-
 
 export type SLIDER_SETTINGS = {
   direction: DIRECTION;
   qtThumbs: QT_THUMBS;
   gap: number;
+}
+
+export type THUMBS_ARRAY = {
+  [key: string]: IThumb
+  //[key in LOCATION]: IThumb
+}
+
+export type THUMBS_VIEW = {
+  [key in LOCATION]: JQuery<HTMLElement>
 }
 
 type Concrete<Type> = {
