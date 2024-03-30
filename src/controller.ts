@@ -1,5 +1,5 @@
 import {IModel, RangeSliderModel} from './model';
-import {SLIDER_PROPS_OPTIONS, LOCATION} from "./types/types";
+import {SLIDER_PROPS_OPTIONS, LOCATION, SIDE} from "./types/types";
 
 export interface IController {
   model: IModel;
@@ -21,8 +21,11 @@ export class RangeSliderController implements IController {
     return this.model.getThumbs()
   }
 
-  setThumbPosition(thumbsPosition: LOCATION, sliderParams: {[key: string]: number}, elementPixels: string | number) {
-    this.model.setThumbPosition(thumbsPosition, sliderParams, elementPixels)
+  newThumbPosition(
+    thumbsPosition: LOCATION,
+    sliderParams: {[key: string]: number},
+    elementPixels: string | number):  {side: SIDE, value: number} {
+    return this.model.newThumbPosition(thumbsPosition, sliderParams, elementPixels)
   }
 
   getThumbPosition(thumbsLocation: LOCATION) {
@@ -35,6 +38,12 @@ export class RangeSliderController implements IController {
 
   getDirection() {
     return this.model.getDirection()
+  }
+
+  checkClickProgressBar(
+    sliderParams: {[key: string]: number},
+    clickPosition: number): {location: LOCATION, side: SIDE, value: number} {
+    return this.model.checkClickProgressBar(sliderParams, clickPosition)
   }
 
 }

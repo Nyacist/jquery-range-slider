@@ -1,5 +1,13 @@
-import {DIRECTION, LOCATION, QT_THUMBS, SIDE , THUMBS_ARRAY, SLIDER_PROPS_OPTIONS, SLIDER_SETTINGS,} from "./types/types";
-import { IThumb, IThumbOptions} from "./types/interfaces";
+import {
+  DIRECTION,
+  LOCATION,
+  QT_THUMBS,
+  SIDE,
+  THUMBS_ARRAY,
+  SLIDER_PROPS_OPTIONS,
+  SLIDER_SETTINGS,
+} from "./types/types";
+import {IThumb, IThumbOptions} from "./types/interfaces";
 
 
 class Thumb implements IThumb {
@@ -56,15 +64,19 @@ export interface IModel {
   thumbs: THUMBS_ARRAY;
 
   setSettings(options?: SLIDER_PROPS_OPTIONS): void;
+
   getSettings(): SLIDER_SETTINGS;
 
   getThumbs(): THUMBS_ARRAY;
-  setThumbPosition(
+
+  newThumbPosition(
     thumbsPosition: LOCATION,
     sliderParams: { [key: string]: number },
     elementPixels: string | number
   ): void;
+
   getThumbPosition(thumbsLocation: LOCATION): number;
+
   getThumbSide(thumbsLocation: LOCATION): SIDE;
 
   getDirection(): DIRECTION;
@@ -112,16 +124,23 @@ export class RangeSliderModel implements IModel {
     return this.thumbs
   }
 
-  setThumbPosition(thumbsPosition: LOCATION, sliderParams: { [key: string]: number }, elementPixels: string | number) {
+  newThumbPosition(
+    thumbLocation: LOCATION,
+    sliderParams: { [key: string]: number },
+    elementPixels: string | number): {side: SIDE, value: number} {
     let thumbPercentageValue = RangeSliderModel._pixelsToPercentInSlider(this.settings.direction, sliderParams, elementPixels)
 
-    const HORIZONTAL_END = (this.settings.direction === DIRECTION.horizontal) && (thumbsPosition === LOCATION.end)
-    const VERTICAL_BEGIN = (this.settings.direction === DIRECTION.vertical) && (thumbsPosition === LOCATION.begin)
+    const HORIZONTAL_END = (this.settings.direction === DIRECTION.horizontal) && (thumbLocation === LOCATION.end)
+    const VERTICAL_BEGIN = (this.settings.direction === DIRECTION.vertical) && (thumbLocation === LOCATION.begin)
 
     if (HORIZONTAL_END || VERTICAL_BEGIN) {
       thumbPercentageValue = 100 - thumbPercentageValue
     }
-    this._checkLimit(thumbsPosition, thumbPercentageValue)
+    this._checkLimit(thumbLocation, thumbPercentageValue)
+    return {
+      side: this.thumbs[thumbLocation].getSide(),
+      value: this.thumbs[thumbLocation].getPosition()
+    }
   }
 
   getThumbPosition(thumbsLocation: LOCATION): number {
@@ -136,29 +155,94 @@ export class RangeSliderModel implements IModel {
     return this.settings.direction
   }
 
-  private _checkLimit = (thumbsPosition: LOCATION, thumbPercentageValue: number) => {
+  checkClickProgressBar(
+    sliderParams: { [key: string]: number },
+    clickPosition: number): {location: LOCATION, side: SIDE, value: number}  {
+    const clickPercentValue = RangeSliderModel._pixelsToPercentInSlider(this.settings.direction, sliderParams, clickPosition)
+    const reverseClickPercentValue = 100 - clickPercentValue
+
+    let thumbLocation: LOCATION = LOCATION.end
+
+    //если один бегунок
+    if (this.settings.qtThumbs === QT_THUMBS.single) {
+      if (this.settings.direction === DIRECTION.horizontal) {
+        this.thumbs[thumbLocation].setPosition(reverseClickPercentValue)
+      }
+      if (this.settings.direction === DIRECTION.vertical) {
+        this.thumbs[thumbLocation].setPosition(clickPercentValue)
+      }
+    }
+
+    //если два бегунка, проверяем к какому клик был ближе, его и двигаем
+    let dBegin = 0
+    let dEnd = 0
+    let value: number
+
+    const thumbsPosition: {[key: string]: number} = {}
+    for (let key in this.thumbs) {
+      thumbsPosition[key] = this.thumbs[key].getPosition()
+    }
+
+    if (this.settings.qtThumbs === QT_THUMBS.double) {
+
+      //для горизонтальных
+      if (this.settings.direction === DIRECTION.horizontal) {
+        dBegin = Math.abs(thumbsPosition[LOCATION.begin] - clickPercentValue)
+        dEnd = Math.abs(reverseClickPercentValue - thumbsPosition[LOCATION.end])
+
+        if(dBegin < dEnd) {
+          thumbLocation = LOCATION.begin
+          value = clickPercentValue
+        } else {
+          value = reverseClickPercentValue
+        }
+        this._checkLimit(thumbLocation, value)
+      }
+      //для вертикальных
+      if (this.settings.direction === DIRECTION.vertical) {
+        dBegin = Math.abs(reverseClickPercentValue - thumbsPosition[LOCATION.begin])
+        dEnd = Math.abs(thumbsPosition[LOCATION.end] - clickPercentValue)
+
+        if(dBegin < dEnd) {
+          thumbLocation = LOCATION.begin
+          value = reverseClickPercentValue
+        } else {
+          value = clickPercentValue
+        }
+        this._checkLimit(thumbLocation, value)
+      }
+    }
+    return {
+      location: thumbLocation,
+      side: this.thumbs[thumbLocation].getSide(),
+      value: this.thumbs[thumbLocation].getPosition()
+    }
+  }
+
+  private _checkLimit = (thumbLocation: LOCATION, thumbPercentageValue: number) => {
+
     // курсор вышел из слайдера => оставить бегунок в его границах.
     if (thumbPercentageValue < 0 || thumbPercentageValue > 100) {
       return
     }
     //бегунки ограничивают друг друга
     if (this.settings.qtThumbs === QT_THUMBS.single) {
-      this.thumbs[thumbsPosition]?.setPosition(thumbPercentageValue)
+      this.thumbs[thumbLocation]?.setPosition(thumbPercentageValue)
       return;
     }
     if (this.settings.qtThumbs === QT_THUMBS.double) {
       let limit = 100 - this.settings.gap   //минимальное ограничение на отступ
       //проверка на ограничение по второму ползунку
-      if (thumbsPosition === LOCATION.begin) {
+      if (thumbLocation === LOCATION.begin) {
         limit = limit - this.thumbs[LOCATION.end]!.getPosition()
-      } else if (thumbsPosition === LOCATION.end) {
+      } else if (thumbLocation === LOCATION.end) {
         limit = limit - this.thumbs[LOCATION.begin]!.getPosition()
       }
       //применить ограничения
       if (thumbPercentageValue > limit) {
-        this.thumbs[thumbsPosition]?.setPosition(limit)
+        this.thumbs[thumbLocation]?.setPosition(limit)
       } else {
-        this.thumbs[thumbsPosition]?.setPosition(thumbPercentageValue)
+        this.thumbs[thumbLocation]?.setPosition(thumbPercentageValue)
       }
     }
   }

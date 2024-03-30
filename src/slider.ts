@@ -166,6 +166,7 @@ export class Slider {
 
   onMouseDown = (e: MouseDownEvent) => {
     e.preventDefault()
+    e.stopPropagation()
 
     const root = this._root
     const thumb = e.data.thumb
@@ -202,6 +203,7 @@ export class Slider {
   }
 
   onClickProgressBar = (e: MouseDownEvent) => {
+
     const thumbsPosition = this._thumbs.map(thumb => thumb.getPosition())
 
     let clickPosition = 0
@@ -212,11 +214,12 @@ export class Slider {
     }
 
     const clickPercentValue = pixelsToPercentInSlider(this._root, this.settings.direction, clickPosition)
+    const reverseClickPercentValue = 100 - clickPercentValue
 
     //если два бегунка, проверяем к какому клик был ближе, его и двигаем
     let dBegin = 0
     let dEnd = 0
-    let reverseClickPercentValue = 100 - clickPercentValue
+
     if ((this.settings.qtThumbs === QT_THUMBS.double) && this._thumbs[1]) {
       //для горизонтальных
       if (this.HORIZONTAL) {

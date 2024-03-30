@@ -1,6 +1,6 @@
 import $ from "jquery";
 import styles from "./style.module.scss";
-import {DIRECTION, LOCATION, THUMBS_VIEW, SLIDER_PROPS_OPTIONS} from "./types/types";
+import {DIRECTION, LOCATION, THUMBS_VIEW, SLIDER_PROPS_OPTIONS, SIDE} from "./types/types";
 import MouseMoveEvent = JQuery.MouseMoveEvent;
 import MouseDownEvent = JQuery.MouseDownEvent;
 import {IController, RangeSliderController} from "./controller";
@@ -24,11 +24,13 @@ export class RangeSliderView implements IView {
     this.controller = new RangeSliderController(options);
     this.root = root
     this.slider = $(`<div class='${styles.slider}'></div>`)
-    this.thumbs = this.createThumbs(this.onMouseDown)
+    this.thumbs = this._createThumbs(this.onMouseDown)
     this.horizontal = (this.controller.getDirection() === DIRECTION.horizontal)
+
+    this.slider.on('mousedown', this.onClickProgressBar)
   }
 
-  createThumbs(onMouseDown: (e: MouseDownEvent) => void): THUMBS_VIEW {
+  private _createThumbs(onMouseDown: (e: MouseDownEvent) => void): THUMBS_VIEW {
     const thumbs = this.controller.getThumbs()
     const result: THUMBS_VIEW = {
       end: $(''),
@@ -49,36 +51,54 @@ export class RangeSliderView implements IView {
 
   onMouseDown = (e: MouseDownEvent) => {
     e.preventDefault()
+    e.stopPropagation()
 
-    const root = this.root
     const location = e.data.location
 
     const onMouseMove = (e: MouseMoveEvent) => {
+      this.root.off('mousedown', this.onClickProgressBar)
       let thumbPosition
       if (this.horizontal) {
-        thumbPosition = e.clientX - ($('.' + styles.slider, root).offset()?.left || 0)
+        thumbPosition = e.clientX - ($('.' + styles.slider, this.root).offset()?.left || 0)
       } else {
-        thumbPosition = e.clientY - ($('.' + styles.slider, root).offset()?.top || 0)
+        thumbPosition = e.clientY - ($('.' + styles.slider, this.root).offset()?.top || 0)
       }
 
       let sliderParams = {
-        width: $('.' + styles.slider, root).width() || 1,
-        height: $('.' + styles.slider, root).height() || 1,
+        width: $('.' + styles.slider, this.root).width() || 1,
+        height: $('.' + styles.slider, this.root).height() || 1,
       }
 
-      this.controller.setThumbPosition(location, sliderParams, thumbPosition)
-      const position = this.controller.getThumbPosition(location)
-      const side = this.controller.getThumbSide(location) || 'right'
-      $(this.thumbs[location]).parent().css(side, position + '%')
+      let params:{side: SIDE, value: number} = this.controller.newThumbPosition(location, sliderParams, thumbPosition)
+      $(this.thumbs[location]).parent().css(params.side, params.value + '%')
     }
 
     const onMouseUp = () => {
       $(document).off('mousemove', onMouseMove)
       $(document).off('mouseup', onMouseUp)
+      //this.root.on('mousedown', this.onClickProgressBar)
     }
 
     $(document).on('mousemove', onMouseMove)
     $(document).on('mouseup', onMouseUp)
+  }
+
+  onClickProgressBar = (e: MouseDownEvent) => {
+
+    let clickPosition
+    if (this.horizontal) {
+      clickPosition = e.clientX - ($('.' + styles.slider, this.root).offset()?.left || 0)
+    } else {
+      clickPosition = e.clientY - ($('.' + styles.slider, this.root).offset()?.top || 0)
+    }
+
+    let sliderParams = {
+      width: $('.' + styles.slider, this.root).width() || 1,
+      height: $('.' + styles.slider, this.root).height() || 1,
+    }
+
+    const params = this.controller.checkClickProgressBar(sliderParams, clickPosition)
+    $(this.thumbs[params.location]).parent().css(params.side, params.value + '%')
   }
 
   mount() {
