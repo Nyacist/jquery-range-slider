@@ -6,24 +6,36 @@ import {
   THUMBS_ARRAY,
   SLIDER_PROPS_OPTIONS,
   SLIDER_SETTINGS,
+  THUMB_OPTIONS, UPDATE_DATA,
 } from "./types/types";
-import {IThumb, IThumbOptions} from "./types/interfaces";
+import {IThumb} from "./types/interfaces";
 
 
 class Thumb implements IThumb {
   location: LOCATION
   direction: DIRECTION
   side: SIDE
+  min: number
+  max: number
   positionInPercentage: number
+  valueInPercentage: number
+  value: number
 
-  constructor(options: IThumbOptions) {
+  constructor(options: THUMB_OPTIONS) {
     this.location = options.location || LOCATION.end
     this.direction = options.direction || DIRECTION.horizontal
 
+    this.min = options.min || 0
+    this.max = options.max || 100
+
     this.positionInPercentage = 0
+    this.valueInPercentage = 100
+    this.value = 100
 
     this.side = SIDE.right
     this._setThumbSide()
+
+    this.setPosition(0)
   }
 
   private _setThumbSide() {
@@ -47,17 +59,35 @@ class Thumb implements IThumb {
   setPosition(value: number) {
     //проценты отступов со всех сторон, НЕ общий прогресс шкалы
     this.positionInPercentage = value
+    this.setValueInPercentage()
   }
 
   getPosition(): number {
     return this.positionInPercentage
   }
 
+  setValueInPercentage () {
+    //общий прогресс шкалы
+    if (this.side === SIDE.right || this.side === SIDE.bottom) {
+      this.valueInPercentage = 100 - this.positionInPercentage
+    } else {
+      this.valueInPercentage =  this.positionInPercentage
+    }
+    this.setValue()
+  }
+
+  setValue() {
+    this.value = (this.max - this.min) / 100 * this.valueInPercentage
+  }
+
+  getValue() {
+    return this.value
+  }
+
   getSide(): SIDE {
     return this.side
   }
 }
-
 
 export interface IModel {
   settings: SLIDER_SETTINGS;
@@ -87,6 +117,8 @@ export class RangeSliderModel implements IModel {
       direction: DIRECTION.horizontal,
       qtThumbs: QT_THUMBS.single,
       gap: 10,
+      min: 0,
+      max: 100,
     }
     this.setSettings(options)
 
@@ -94,12 +126,16 @@ export class RangeSliderModel implements IModel {
       [LOCATION.end]: new Thumb({
         location: LOCATION.end,
         direction: this.settings.direction,
+        min: this.settings.min,
+        max: this.settings.max,
       }),
     }
     if (this.settings.qtThumbs === QT_THUMBS.double) {
       this.thumbs[LOCATION.begin] = new Thumb({
         location: LOCATION.begin,
         direction: this.settings.direction,
+        min: this.settings.min,
+        max: this.settings.max,
       })
     }
   }
@@ -123,7 +159,7 @@ export class RangeSliderModel implements IModel {
   newThumbPosition(
     thumbLocation: LOCATION,
     sliderParams: { [key: string]: number },
-    positionInPixels: number): { side: SIDE, value: number } {
+    positionInPixels: number): UPDATE_DATA {
     let thumbPercentageValue = RangeSliderModel._pixelsToPercentInSlider(this.settings.direction, sliderParams, positionInPixels)
 
     const HORIZONTAL_END = (this.settings.direction === DIRECTION.horizontal) && (thumbLocation === LOCATION.end)
@@ -135,13 +171,31 @@ export class RangeSliderModel implements IModel {
     this._checkLimit(thumbLocation, thumbPercentageValue)
     return {
       side: this.thumbs[thumbLocation].getSide(),
-      value: this.thumbs[thumbLocation].getPosition()
+      position: this.thumbs[thumbLocation].getPosition(),
+      value: this.thumbs[thumbLocation].getValue(),
+    }
+  }
+
+  newThumbValue(location: LOCATION, value: number):  UPDATE_DATA {
+    let valToPercent = value * 100 / (this.settings.max - this.settings.min)
+
+    const HORIZONTAL_END = (this.settings.direction === DIRECTION.horizontal) && (location === LOCATION.end)
+    const VERTICAL_BEGIN = (this.settings.direction === DIRECTION.vertical) && (location === LOCATION.begin)
+
+    if (HORIZONTAL_END || VERTICAL_BEGIN) {
+      valToPercent = 100 - valToPercent
+    }
+    this._checkLimit(location, valToPercent)
+    return {
+      side: this.thumbs[location].getSide(),
+      position: this.thumbs[location].getPosition(),
+      value: this.thumbs[location].getValue(),
     }
   }
 
   checkClickProgressBar(
     sliderParams: { [key: string]: number },
-    clickPosition: number): { side: SIDE, value: number } {
+    clickPosition: number): UPDATE_DATA {
     const clickPercentValue = RangeSliderModel._pixelsToPercentInSlider(this.settings.direction, sliderParams, clickPosition)
     const reverseClickPercentValue = 100 - clickPercentValue
 
@@ -197,7 +251,8 @@ export class RangeSliderModel implements IModel {
     }
     return {
       side: this.thumbs[thumbLocation].getSide(),
-      value: this.thumbs[thumbLocation].getPosition()
+      position: this.thumbs[thumbLocation].getPosition(),
+      value: this.thumbs[thumbLocation].getValue(),
     }
   }
 

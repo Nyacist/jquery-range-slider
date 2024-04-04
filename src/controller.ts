@@ -28,6 +28,10 @@ export class RangeSliderController implements IController {
     return this.model.newThumbPosition(thumbsPosition, sliderParams, positionInPixels)
   }
 
+  newValue(location: LOCATION, value: number): UPDATE_DATA {
+    return this.model.newThumbValue(location, value)
+  }
+
   getDirection() {
     return this.model.getDirection()
   }

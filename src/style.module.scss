@@ -86,3 +86,31 @@
   }
 }
 
+.wrapper_inputs{
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.input{
+
+  &_value{
+    padding: 5px;
+    width: 50px;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      /* display: none; <- Crashes Chrome on hover */
+      -webkit-appearance: none;
+      margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+    }
+  }
+
+  //&_begin {
+  //  margin-left: 0;
+  //}
+  //&_end {
+  //  margin-right: 0;
+  //}
+}

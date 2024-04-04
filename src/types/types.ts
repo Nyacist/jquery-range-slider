@@ -34,13 +34,8 @@ export type SLIDER_PARAMS = {
 
 export type UPDATE_DATA = {
   side: SIDE,
+  position: number,
   value: number,
-}
-
-export type SLIDER_SETTINGS = {
-  direction: DIRECTION;
-  qtThumbs: QT_THUMBS;
-  gap: number;
 }
 
 export type THUMBS_ARRAY = {
@@ -49,7 +44,21 @@ export type THUMBS_ARRAY = {
 }
 
 export type THUMBS_VIEW = {
-  [key in LOCATION]: JQuery<HTMLElement>
+  [key: string]: JQuery<HTMLElement>
+  //[key in LOCATION]: JQuery<HTMLElement>
+}
+
+export type INPUTS = {
+  [key: string]: JQuery<HTMLElement>
+  //[key in LOCATION]: JQuery<HTMLElement>
+}
+
+export type SLIDER_SETTINGS = {
+  direction: DIRECTION;
+  qtThumbs: QT_THUMBS;
+  gap: number;
+  min: number;
+  max: number;
 }
 
 type Concrete<Type> = {
@@ -57,3 +66,10 @@ type Concrete<Type> = {
 };
 
 export type SLIDER_PROPS_OPTIONS = Concrete<SLIDER_SETTINGS>
+
+export type THUMB_OPTIONS = {
+  location: LOCATION;
+  direction: DIRECTION;
+  min: number;
+  max: number;
+}

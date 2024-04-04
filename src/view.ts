@@ -1,9 +1,19 @@
 import $ from "jquery";
 import styles from "./style.module.scss";
-import {DIRECTION, LOCATION, THUMBS_VIEW, SLIDER_PROPS_OPTIONS, SIDE, SLIDER_PARAMS, UPDATE_DATA} from "./types/types";
+import {
+  DIRECTION,
+  LOCATION,
+  THUMBS_VIEW,
+  SLIDER_PROPS_OPTIONS,
+  SIDE,
+  SLIDER_PARAMS,
+  UPDATE_DATA,
+  INPUTS
+} from "./types/types";
 import MouseMoveEvent = JQuery.MouseMoveEvent;
 import MouseDownEvent = JQuery.MouseDownEvent;
 import {IController, RangeSliderController} from "./controller";
+import ChangeEvent = JQuery.ChangeEvent;
 
 
 export interface IView {
@@ -20,6 +30,7 @@ export class RangeSliderView implements IView {
   progress: JQuery<HTMLElement>
   thumbs: THUMBS_VIEW
   horizontal: boolean
+  inputs: INPUTS
 
   constructor(root: JQuery<HTMLElement>, options?: SLIDER_PROPS_OPTIONS) {
     this.controller = new RangeSliderController(options);
@@ -29,15 +40,14 @@ export class RangeSliderView implements IView {
     this.thumbs = this._createThumbs(this.onMouseDown)
     this.horizontal = (this.controller.getDirection() === DIRECTION.horizontal)
 
+    this.inputs = this._createInputs(this.onChangeInput)
+
     this.slider.on('mousedown', this.onClickProgressBar)
   }
 
   private _createThumbs(onMouseDown: (e: MouseDownEvent) => void): THUMBS_VIEW {
     const thumbs = this.controller.getThumbs()
-    let result: THUMBS_VIEW = {
-      end: $(''),
-      begin: $(''),
-    }
+    let result: THUMBS_VIEW = {}
     for (let key in thumbs) {
       let locationStyle
       key === LOCATION.end
@@ -47,9 +57,33 @@ export class RangeSliderView implements IView {
         result[key] = $(`<div class='${styles.thumb} ${locationStyle}'></div>`)
         result[key].on('mousedown', {location: thumbs[key].location}, onMouseDown)
       }
-
     }
     return result
+  }
+
+  private _createInputs(onChangeInput: (e: ChangeEvent) => void): INPUTS {
+    const thumbs = this.controller.getThumbs()
+    let result: INPUTS = {}
+
+    for (let key in thumbs) {
+      if (key === LOCATION.begin || key === LOCATION.end) {
+        result[key] = $(`<input type="number" 
+            class='${styles.input_value} '
+            value=${thumbs[key].value}
+        >`)
+        result[key].on('change',{location: thumbs[key].location}, onChangeInput)
+      }
+    }
+    return result
+  }
+
+  onChangeInput = (e: ChangeEvent) => {
+    const location = e.data.location
+    const val = $(e.currentTarget).val()
+
+    const params: UPDATE_DATA = this.controller.newValue(location, val)
+    this._updateProgressBar(params.side, params.position)
+    this._updateInput(location, params.value)
   }
 
   onMouseDown = (e: MouseDownEvent) => {
@@ -63,7 +97,9 @@ export class RangeSliderView implements IView {
       const sliderParams = this._getSliderParams()
 
       const params: UPDATE_DATA = this.controller.newThumbPosition(location, sliderParams, thumbPosition)
-      this._updateProgressBar(params.side, params.value)
+      console.log(params)
+      this._updateProgressBar(params.side, params.position)
+      this._updateInput(location, params.value)
     }
 
     const onMouseUp = () => {
@@ -80,7 +116,12 @@ export class RangeSliderView implements IView {
     const sliderParams = this._getSliderParams()
 
     const params: UPDATE_DATA = this.controller.checkClickProgressBar(sliderParams, clickPosition)
-    this._updateProgressBar(params.side, params.value)
+    this._updateProgressBar(params.side, params.position)
+    if (params.side === 'left' || params.side === 'bottom') {
+      this._updateInput(LOCATION.begin, params.value)
+    } else {
+      this._updateInput(LOCATION.end, params.value)
+    }
   }
 
   private _getClickPosition(e: MouseDownEvent | MouseMoveEvent): number {
@@ -104,7 +145,18 @@ export class RangeSliderView implements IView {
     this.progress.css(side, value + '%')
   }
 
+  private _updateInput(location: LOCATION, value: number) {
+    this.inputs[location].val(value)
+  }
+
   mount() {
+    const inputs = $(`<div class='${styles.wrapper_inputs}'></div>`)
+    for (let key in this.inputs) {
+      if (key === LOCATION.begin || key === LOCATION.end) {
+        inputs.append(this.inputs[key])
+      }
+    }
+
     for (let key in this.thumbs) {
       if (key === LOCATION.begin || key === LOCATION.end) {
         this.progress.append(this.thumbs[key])
@@ -116,7 +168,7 @@ export class RangeSliderView implements IView {
       ? direction = styles.wrapper_horizontal
       : direction = styles.wrapper_vertical
 
-    const wrapper = $(`<div class='${styles.wrapper} ${direction}'></div>`).append(slider)
+    const wrapper = $(`<div class='${styles.wrapper} ${direction}'></div>`).append(inputs).append(slider)
     $(this.root).append(wrapper)
   }
 }
