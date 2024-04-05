@@ -18,9 +18,9 @@ function pixelsToPercentInSlider(root: JQuery<HTMLElement>, direction: DIRECTION
 }
 
 export interface ISliderOptions {
-  direction?: DIRECTION,
-  qtThumbs?: QT_THUMBS,
-  gap?: number,
+  // direction?: DIRECTION,
+  // qtThumbs?: QT_THUMBS,
+  // gap?: number,
 }
 
 interface ISliderSettings {

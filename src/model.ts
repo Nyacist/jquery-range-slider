@@ -71,13 +71,15 @@ class Thumb implements IThumb {
     if (this.side === SIDE.right || this.side === SIDE.bottom) {
       this.valueInPercentage = 100 - this.positionInPercentage
     } else {
-      this.valueInPercentage =  this.positionInPercentage
+      this.valueInPercentage = this.positionInPercentage
     }
     this.setValue()
   }
 
   setValue() {
-    this.value = (this.max - this.min) / 100 * this.valueInPercentage
+    let val = this.min + ((this.max - this.min) / 100 * this.valueInPercentage)
+    val = Math.round(val)
+    this.value = val
   }
 
   getValue() {
@@ -121,6 +123,7 @@ export class RangeSliderModel implements IModel {
       max: 100,
     }
     this.setSettings(options)
+    console.log(this.settings)
 
     this.thumbs = {
       [LOCATION.end]: new Thumb({
@@ -177,7 +180,7 @@ export class RangeSliderModel implements IModel {
   }
 
   newThumbValue(location: LOCATION, value: number):  UPDATE_DATA {
-    let valToPercent = value * 100 / (this.settings.max - this.settings.min)
+    let valToPercent = (value - this.settings.min) * 100 / (this.settings.max - this.settings.min)
 
     const HORIZONTAL_END = (this.settings.direction === DIRECTION.horizontal) && (location === LOCATION.end)
     const VERTICAL_BEGIN = (this.settings.direction === DIRECTION.vertical) && (location === LOCATION.begin)

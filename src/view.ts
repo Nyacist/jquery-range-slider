@@ -82,6 +82,7 @@ export class RangeSliderView implements IView {
     const val = $(e.currentTarget).val()
 
     const params: UPDATE_DATA = this.controller.newValue(location, val)
+    //console.log(params)
     this._updateProgressBar(params.side, params.position)
     this._updateInput(location, params.value)
   }
