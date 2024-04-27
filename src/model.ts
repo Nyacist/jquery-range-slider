@@ -123,7 +123,6 @@ export class RangeSliderModel implements IModel {
       max: 100,
     }
     this.setSettings(options)
-    console.log(this.settings)
 
     this.thumbs = {
       [LOCATION.end]: new Thumb({

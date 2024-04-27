@@ -54,7 +54,11 @@ export class RangeSliderView implements IView {
         ? locationStyle = styles.thumb_end
         : locationStyle = styles.thumb_begin
       if (key === LOCATION.begin || key === LOCATION.end) {
-        result[key] = $(`<div class='${styles.thumb} ${locationStyle}'></div>`)
+        result[key] = $(`<div class='${styles.thumb} ${locationStyle}'>
+            <div class='${styles.thumb_value}'>
+                <span>${thumbs[key].value}</span>
+            </div>
+          </div>`)
         result[key].on('mousedown', {location: thumbs[key].location}, onMouseDown)
       }
     }
@@ -71,7 +75,7 @@ export class RangeSliderView implements IView {
             class='${styles.input_value} '
             value=${thumbs[key].value}
         >`)
-        result[key].on('change',{location: thumbs[key].location}, onChangeInput)
+        result[key].on('change', {location: thumbs[key].location}, onChangeInput)
       }
     }
     return result
@@ -82,7 +86,6 @@ export class RangeSliderView implements IView {
     const val = $(e.currentTarget).val()
 
     const params: UPDATE_DATA = this.controller.newValue(location, val)
-    //console.log(params)
     this._updateProgressBar(params.side, params.position)
     this._updateInput(location, params.value)
   }
@@ -98,9 +101,9 @@ export class RangeSliderView implements IView {
       const sliderParams = this._getSliderParams()
 
       const params: UPDATE_DATA = this.controller.newThumbPosition(location, sliderParams, thumbPosition)
-      console.log(params)
       this._updateProgressBar(params.side, params.position)
       this._updateInput(location, params.value)
+      this._updateThumbValue(location, params.value)
     }
 
     const onMouseUp = () => {
@@ -142,12 +145,16 @@ export class RangeSliderView implements IView {
     }
   }
 
-  private _updateProgressBar(side:SIDE, value: number){
+  private _updateProgressBar(side: SIDE, value: number) {
     this.progress.css(side, value + '%')
   }
 
   private _updateInput(location: LOCATION, value: number) {
     this.inputs[location].val(value)
+  }
+
+  private _updateThumbValue(location: LOCATION, value: number) {
+    $('span', this.thumbs[location]).text(value)
   }
 
   mount() {
